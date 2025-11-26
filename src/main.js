@@ -19,9 +19,13 @@ const {data, ...indexes} = initData(sourceData);
  */
 function collectState() {
     const state = processFormData(new FormData(sampleTable.container));
+    const rowsPerPage = parseInt(state.rowsPerPage)
+    const page = parseInt(state.page ?? 1)
 
     return {
-        ...state
+        ...state,
+        rowsPerPage,
+        page
     };
 }
 
@@ -33,7 +37,7 @@ function render(action) {
     let state = collectState(); // состояние полей из таблицы
     let result = [...data]; // копируем для последующего изменения
     // @todo: использование
-
+    result = applyPagination(result, state, action);
 
     sampleTable.render(result)
 }
@@ -41,12 +45,27 @@ function render(action) {
 const sampleTable = initTable({
     tableTemplate: 'table',
     rowTemplate: 'row',
-    before: [],
-    after: []
+    before: ['header'],
+    after: ['pagination']
 }, render);
 
 // @todo: инициализация
+const applyPagination = initPagination(
+    sampleTable.pagination.elements,             // передаём сюда элементы пагинации, найденные в шаблоне
+    (el, page, isCurrent) => {                    // и колбэк, чтобы заполнять кнопки страниц данными
+        const input = el.querySelector('input');
+        const label = el.querySelector('span');
+        input.value = page;
+        input.checked = isCurrent;
+        label.textContent = page;
+        return el;
+    }
+)
 
+const applySorting = initSorting([        // Нам нужно передать сюда массив элементов, которые вызывают сортировку, чтобы изменять их визуальное представление
+    sampleTable.header.elements.sortByDate,
+    sampleTable.header.elements.sortByTotal
+]);
 
 const appRoot = document.querySelector('#app');
 appRoot.appendChild(sampleTable.container);
